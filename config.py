@@ -15,6 +15,7 @@ EMAIL_THREAD_LIMIT = int(os.getenv("EMAIL_THREAD_LIMIT", "10"))
 
 TRIGGER_LOOKAHEAD_MINUTES = int(os.getenv("TRIGGER_LOOKAHEAD_MINUTES", "15"))
 TRIGGER_KEYWORD = os.getenv("TRIGGER_KEYWORD", "YSA BM")
+TRIGGER_RECIPIENT = os.getenv("TRIGGER_RECIPIENT", "meiroratz@gmail.com")
 TRIGGER_STATE_FILE = Path(os.getenv("TRIGGER_STATE_FILE", "trigger_state.json"))
 
 GOOGLE_SCOPES = [

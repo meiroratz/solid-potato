@@ -90,7 +90,7 @@ def main() -> None:
         print(f"  sending notification: {event.title} @ {event.time_range}")
         subject, html = _compose_notification(event)
         try:
-            msg_id = send_now(subject, html)
+            msg_id = send_now(subject, html, recipient=config.TRIGGER_RECIPIENT)
             state[event.event_id] = {
                 "title": event.title,
                 "start": event.start.isoformat(),

@@ -25,13 +25,13 @@ def create_draft(subject: str, html_body: str) -> str:
     return draft["id"]
 
 
-def send_now(subject: str, html_body: str) -> str:
+def send_now(subject: str, html_body: str, recipient: str = "") -> str:
     creds = get_credentials()
     service = build("gmail", "v1", credentials=creds)
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["To"] = config.BRIEFING_RECIPIENT or "me"
+    msg["To"] = recipient or config.BRIEFING_RECIPIENT or "me"
     msg.attach(MIMEText(html_body, "html"))
 
     raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
