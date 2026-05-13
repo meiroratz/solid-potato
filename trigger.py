@@ -29,18 +29,29 @@ def _save_state(state: dict) -> None:
 
 # ── Email composition ─────────────────────────────────────────────────────────
 
+def _row(label: str, value: str, icon: str = "") -> str:
+    prefix = f"{icon} " if icon else ""
+    return f"""
+    <tr>
+      <td style="padding:8px 12px 8px 0;font-size:12px;color:#999;
+                 white-space:nowrap;vertical-align:top;">{label}</td>
+      <td style="padding:8px 0;font-size:14px;color:#333;">{prefix}{value}</td>
+    </tr>"""
+
+
 def _compose_notification(event: CalendarEvent) -> tuple[str, str]:
     subject = f"Starting soon: {event.title}"
 
-    time_label = event.time_range
-    location_row = (
-        f'<p style="margin:4px 0;font-size:14px;color:#555;">📍 {event.location}</p>'
-        if event.location else ""
-    )
-    description_row = (
-        f'<p style="margin:8px 0 0;font-size:13px;color:#666;">{event.description}</p>'
-        if event.description else ""
-    )
+    date_str = event.start.strftime("%A, %B %-d, %Y")
+
+    rows = _row("Date", date_str, "📅")
+    rows += _row("Time", event.time_range, "🕐")
+    rows += _row("Calendar", event.calendar_name, "🗂")
+    if event.location:
+        rows += _row("Location", event.location, "📍")
+    if event.description:
+        desc_html = event.description.replace("\n", "<br>")
+        rows += _row("Description", desc_html)
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -52,13 +63,11 @@ def _compose_notification(event: CalendarEvent) -> tuple[str, str]:
     <div style="background:#1a1a2e;color:#fff;padding:20px 24px;">
       <p style="margin:0;font-size:12px;opacity:.7;text-transform:uppercase;
                 letter-spacing:.08em;">Starting soon</p>
-      <h1 style="margin:6px 0 0;font-size:20px;font-weight:700;">{event.title}</h1>
+      <h1 style="margin:6px 0 0;font-size:22px;font-weight:700;">{event.title}</h1>
     </div>
     <div style="padding:20px 24px;">
-      <p style="margin:0 0 4px;font-size:13px;color:#999;">{event.calendar_name}</p>
-      <p style="margin:0 0 8px;font-size:16px;font-weight:600;">🕐 {time_label}</p>
-      {location_row}
-      {description_row}
+      <table style="border-collapse:collapse;width:100%">{rows}
+      </table>
     </div>
   </div>
 </body>
