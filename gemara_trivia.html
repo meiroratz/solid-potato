@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gemara Trivia</title>
+  <style>
+    :root {
+      --parchment: #f5e6c8;
+      --parchment-dark: #e8d5a8;
+      --ink: #2c1a0e;
+      --ink-light: #5a3a1a;
+      --gold: #c8930a;
+      --gold-light: #f0b429;
+      --red: #8b1a1a;
+      --green: #1a5c1a;
+      --blue: #1a3a6b;
+      --shadow: rgba(44, 26, 14, 0.25);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(ellipse at top, #1a0a00 0%, #0d0500 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Georgia', 'Times New Roman', serif;
+      padding: 1rem;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 760px;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .header h1 {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      color: var(--gold-light);
+      text-shadow: 0 0 20px rgba(200,147,10,0.6), 0 2px 4px rgba(0,0,0,0.8);
+      letter-spacing: 2px;
+      line-height: 1.1;
+    }
+
+    .header .hebrew {
+      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      color: var(--gold);
+      direction: rtl;
+      text-shadow: 0 0 12px rgba(200,147,10,0.4);
+      margin-top: 0.3rem;
+    }
+
+    .header .subtitle {
+      color: #a07040;
+      font-size: 0.9rem;
+      margin-top: 0.4rem;
+      font-style: italic;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: linear-gradient(160deg, var(--parchment) 0%, var(--parchment-dark) 100%);
+      border-radius: 4px;
+      border: 2px solid var(--gold);
+      box-shadow:
+        0 0 0 1px rgba(200,147,10,0.3),
+        0 8px 32px var(--shadow),
+        inset 0 1px 0 rgba(255,255,255,0.5);
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    /* ── Score bar ── */
+    .score-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.4rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--parchment-dark);
+    }
+
+    .score-pill {
+      background: var(--ink);
+      color: var(--gold-light);
+      padding: 0.3rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .progress-wrap {
+      flex: 1;
+      margin: 0 1rem;
+      height: 8px;
+      background: rgba(44,26,14,0.15);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold), var(--gold-light));
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+
+    .q-counter {
+      font-size: 0.82rem;
+      color: var(--ink-light);
+      white-space: nowrap;
+    }
+
+    /* ── Category badge ── */
+    .category {
+      display: inline-block;
+      background: var(--blue);
+      color: #c8d8f0;
+      font-size: 0.72rem;
+      padding: 0.2rem 0.7rem;
+      border-radius: 3px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+    }
+
+    /* ── Question ── */
+    .question-text {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: var(--ink);
+      line-height: 1.55;
+      margin-bottom: 1.5rem;
+      font-weight: bold;
+    }
+
+    .question-text .hebrew-phrase {
+      direction: rtl;
+      display: inline-block;
+      color: var(--red);
+      font-style: normal;
+    }
+
+    /* ── Choices ── */
+    .choices {
+      display: grid;
+      gap: 0.7rem;
+    }
+
+    .choice-btn {
+      background: rgba(44,26,14,0.07);
+      border: 1.5px solid rgba(44,26,14,0.2);
+      border-radius: 4px;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--ink);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+
+    .choice-btn:hover:not(:disabled) {
+      background: rgba(200,147,10,0.15);
+      border-color: var(--gold);
+      transform: translateX(4px);
+    }
+
+    .choice-btn .label {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--ink);
+      color: var(--gold-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: bold;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .choice-btn.correct {
+      background: rgba(26,92,26,0.15);
+      border-color: var(--green);
+    }
+    .choice-btn.correct .label { background: var(--green); }
+
+    .choice-btn.wrong {
+      background: rgba(139,26,26,0.12);
+      border-color: var(--red);
+      opacity: 0.75;
+    }
+    .choice-btn.wrong .label { background: var(--red); }
+
+    .choice-btn:disabled { cursor: default; transform: none; }
+
+    /* ── Explanation ── */
+    .explanation {
+      margin-top: 1.2rem;
+      padding: 0.9rem 1rem;
+      background: rgba(44,26,14,0.06);
+      border-left: 3px solid var(--gold);
+      border-radius: 0 4px 4px 0;
+      font-size: 0.88rem;
+      color: var(--ink-light);
+      line-height: 1.55;
+      display: none;
+    }
+    .explanation.show { display: block; }
+    .explanation strong { color: var(--ink); }
+
+    /* ── Next button ── */
+    .next-btn {
+      margin-top: 1.2rem;
+      width: 100%;
+      padding: 0.8rem;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+      color: var(--ink);
+      border: none;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 1px;
+      box-shadow: 0 3px 10px rgba(200,147,10,0.4);
+      transition: transform 0.1s, box-shadow 0.1s;
+      display: none;
+    }
+    .next-btn.show { display: block; }
+    .next-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(200,147,10,0.5); }
+    .next-btn:active { transform: translateY(0); }
+
+    /* ── Results ── */
+    #results {
+      text-align: center;
+    }
+
+    .results-score {
+      font-size: clamp(3rem, 10vw, 5rem);
+      font-weight: bold;
+      color: var(--gold-light);
+      text-shadow: 0 0 20px rgba(200,147,10,0.5);
+      line-height: 1;
+      margin: 0.5rem 0;
+    }
+
+    .results-label {
+      font-size: 1rem;
+      color: var(--ink-light);
+      margin-bottom: 1.5rem;
+    }
+
+    .results-title {
+      font-size: 1.5rem;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+    }
+
+    .rank-badge {
+      display: inline-block;
+      padding: 0.5rem 1.5rem;
+      border-radius: 999px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 1.5rem;
+      letter-spacing: 1px;
+    }
+
+    .results-breakdown {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+
+    .breakdown-item {
+      background: rgba(44,26,14,0.07);
+      border-radius: 4px;
+      padding: 0.6rem 0.8rem;
+      font-size: 0.85rem;
+      color: var(--ink-light);
+    }
+    .breakdown-item span { color: var(--ink); font-weight: bold; }
+
+    .restart-btn {
+      padding: 0.8rem 2.5rem;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+      color: var(--ink);
+      border: none;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 1px;
+      box-shadow: 0 3px 10px rgba(200,147,10,0.4);
+      transition: transform 0.1s;
+    }
+    .restart-btn:hover { transform: translateY(-2px); }
+
+    /* ── Intro screen ── */
+    #intro {
+      text-align: center;
+    }
+    .intro-text {
+      font-size: 0.95rem;
+      color: var(--ink-light);
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+    }
+    .intro-stats {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-bottom: 1.8rem;
+      flex-wrap: wrap;
+    }
+    .stat-box {
+      background: rgba(44,26,14,0.08);
+      border: 1px solid rgba(44,26,14,0.15);
+      border-radius: 4px;
+      padding: 0.7rem 1.2rem;
+      text-align: center;
+    }
+    .stat-box .num { font-size: 1.6rem; font-weight: bold; color: var(--gold); }
+    .stat-box .lbl { font-size: 0.75rem; color: var(--ink-light); }
+
+    .start-btn {
+      padding: 0.9rem 3rem;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+      color: var(--ink);
+      border: none;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 2px;
+      box-shadow: 0 4px 16px rgba(200,147,10,0.45);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .start-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(200,147,10,0.55); }
+
+    /* ── Decorative divider ── */
+    .divider {
+      text-align: center;
+      color: var(--gold);
+      font-size: 1.2rem;
+      letter-spacing: 6px;
+      margin: 1rem 0;
+      opacity: 0.6;
+    }
+
+    /* ── Streak ── */
+    .streak-badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      background: var(--gold);
+      color: var(--ink);
+      border-radius: 3px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      margin-left: 0.5rem;
+    }
+
+    /* fade transition */
+    .fade { animation: fadeIn 0.35s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="hebrew">גמרא טריוויה</div>
+    <h1>GEMARA TRIVIA</h1>
+    <div class="subtitle">Test your knowledge of the Oral Torah</div>
+  </div>
+
+  <div class="card" id="game-card">
+    <!-- screens injected by JS -->
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  // ── Tractates & Structure ──
+  {
+    cat: "Tractates",
+    q: "Which is the longest tractate in the entire Talmud Bavli?",
+    choices: ["Bava Batra", "Sanhedrin", "Shabbat", "Ketubot"],
+    answer: 0,
+    explain: "<strong>Bava Batra</strong> has 176 pages (dapim), making it the longest tractate in the Babylonian Talmud. It deals primarily with civil law, property rights, and inheritance."
+  },
+  {
+    cat: "Tractates",
+    q: "The Six Orders (Sedarim) of the Mishnah are remembered by the acronym <span class='hebrew-phrase'>זְמַן נָשִׁים נְזִיקִין קָדָשִׁים טָהֳרוֹת</span> — wait, what is the correct mnemonic?",
+    choices: ["זְמַן נָשִׁים נְזִיקִין קָדָשִׁים טָהֳרוֹת", "זְרָעִים מוֹעֵד נָשִׁים נְזִיקִין קָדָשִׁים טָהֳרוֹת", "שַׁבָּת מוֹעֵד נָשִׁים אָבוֹת קָדָשִׁים", "None — there is no mnemonic"],
+    answer: 1,
+    explain: "The six Sedarim are <strong>Zera'im, Mo'ed, Nashim, Nezikin, Kodashim, Taharot</strong>. The mnemonic <em>\"Zecharya Melek Noten Kesef Tov\"</em> (or similar) helps students remember the order."
+  },
+  {
+    cat: "Tractates",
+    q: "Tractate Avot (Ethics of the Fathers) belongs to which Seder?",
+    choices: ["Nashim", "Mo'ed", "Nezikin", "Kodashim"],
+    answer: 2,
+    explain: "<strong>Nezikin</strong> (Damages) contains tractate Avot. Although Avot is philosophical rather than legal, it is placed in Nezikin, which deals broadly with civil and interpersonal law."
+  },
+  {
+    cat: "Tractates",
+    q: "Which tractate opens with the famous question about when the evening Shema may be recited?",
+    choices: ["Berachot", "Shabbat", "Eruvin", "Pesachim"],
+    answer: 0,
+    explain: "<strong>Berachot</strong> opens both the Mishnah and the Talmud Bavli with <em>\"Me'eimatai korin et ha-Shema b'arvit\"</em> — 'From when may one recite the evening Shema?' It is traditionally learned first."
+  },
+  {
+    cat: "Tractates",
+    q: "The three \"Bavot\" (gates) — Bava Kamma, Bava Metzia, and Bava Batra — were originally a single tractate known as what?",
+    choices: ["Nezikin", "Dinei Mamonot", "Choshen Mishpat", "Masechet Rishona"],
+    answer: 0,
+    explain: "The three Bavot were originally one large tractate called <strong>Nezikin</strong> (Damages). They were split into three \"gates\" (Bava = gate) due to their great length."
+  },
+
+  // ── Sages — Tannaim ──
+  {
+    cat: "Sages — Tannaim",
+    q: "Which Tanna is known as the author of the Mishnah, compiling it around 200 CE?",
+    choices: ["Rabbi Akiva", "Shimon bar Yochai", "Rabbi Yehuda HaNasi", "Hillel the Elder"],
+    answer: 2,
+    explain: "<strong>Rabbi Yehuda HaNasi</strong> (Judah the Prince), known simply as \"Rebbi,\" redacted and compiled the Mishnah around 200 CE, codifying centuries of oral tradition."
+  },
+  {
+    cat: "Sages — Tannaim",
+    q: "Rabbi Akiva's martyrdom — reciting Shema while his flesh was combed with iron combs — is recorded in which tractate?",
+    choices: ["Sanhedrin", "Berachot", "Avoda Zara", "Yoma"],
+    answer: 1,
+    explain: "The story of <strong>Rabbi Akiva's</strong> martyrdom and his ecstatic recitation of Shema appears in <em>Berachot 61b</em>. His final word was <em>\"echad\"</em> (one), and his soul departed on that word."
+  },
+  {
+    cat: "Sages — Tannaim",
+    q: "Which pair of Tannaim are famously associated with the disputes known as \"Beit Shammai\" and \"Beit Hillel\"?",
+    choices: ["Shammai & Hillel", "Rabbi Akiva & Rabbi Ishmael", "Rabbi Meir & Rabbi Yehuda", "Abaye & Rava"],
+    answer: 0,
+    explain: "<strong>Hillel and Shammai</strong> were the last of the Zugot (paired leaders) and founded two rival schools whose debates appear throughout the Talmud. The halacha generally follows Beit Hillel."
+  },
+  {
+    cat: "Sages — Tannaim",
+    q: "\"Torah l'Shma\" (Torah for its own sake) is most associated with which sage, who taught that one who studies Torah without proper intention, it would have been better had he not been born?",
+    choices: ["Rabbi Shimon bar Yochai", "Rabbi Akiva", "Shimon HaTzaddik", "Rabbi Elazar ben Azaryah"],
+    answer: 0,
+    explain: "<strong>Rabbi Shimon bar Yochai</strong> was the foremost champion of <em>Torah l'Shma</em> — Torah studied for its own sake. Tradition attributes the Zohar to him, and he is celebrated on Lag Ba'Omer."
+  },
+
+  // ── Sages — Amoraim ──
+  {
+    cat: "Sages — Amoraim",
+    q: "The famous debate partners Abaye and Rava appear on almost every page of the Talmud. Which tractate contains the most recorded disputes between them?",
+    choices: ["Bava Metzia", "Ketubot", "Kiddushin", "Sanhedrin"],
+    answer: 0,
+    explain: "<strong>Bava Metzia</strong> contains an especially dense concentration of Abaye–Rava debates. Their disputes (\"Abaye amar… Rava amar…\") are so central to Talmud study that they have a special name: <em>havayot d'Abaye v'Rava</em>."
+  },
+  {
+    cat: "Sages — Amoraim",
+    q: "Rav and Shmuel were the founding Amoraim of which major Babylonian academy?",
+    choices: ["Rav founded Sura; Shmuel founded Nehardea", "Both founded Pumbedita", "Rav founded Nehardea; Shmuel founded Sura", "Both founded Sura"],
+    answer: 0,
+    explain: "<strong>Rav</strong> founded the academy at <strong>Sura</strong> and <strong>Shmuel</strong> led the academy at <strong>Nehardea</strong>. These became the two great centers of Babylonian Jewish learning in the Amoraic period."
+  },
+  {
+    cat: "Sages — Amoraim",
+    q: "Which Amora is credited with compiling the Jerusalem Talmud (Talmud Yerushalmi)?",
+    choices: ["Rabbi Yochanan bar Nafcha", "Resh Lakish", "Rav Ashi", "Rabbi Ami"],
+    answer: 0,
+    explain: "<strong>Rabbi Yochanan bar Nafcha</strong>, head of the academy in Tiberias, is credited with the compilation of the Jerusalem Talmud (c. 350 CE). He and his brother-in-law Resh Lakish are among its most-cited sages."
+  },
+  {
+    cat: "Sages — Amoraim",
+    q: "Rav Ashi spent decades editing the Babylonian Talmud. In which city was his academy located?",
+    choices: ["Nehardea", "Pumbedita", "Mata Mechasia / Sura", "Ctesiphon"],
+    answer: 2,
+    explain: "<strong>Rav Ashi</strong> was the head of the academy at <strong>Mata Mechasia</strong> (adjacent to Sura) and is considered the primary redactor of the Babylonian Talmud. His work was completed by Ravina."
+  },
+
+  // ── Key Concepts ──
+  {
+    cat: "Key Concepts",
+    q: "The principle \"<span class='hebrew-phrase'>דִּינָא דְמַלְכוּתָא דִּינָא</span>\" (the law of the kingdom is the law) means what?",
+    choices: [
+      "Civil law of the host nation is binding on Jews",
+      "Only Torah law applies to Jews",
+      "Jewish courts override civil law",
+      "The king's religious decrees must be obeyed"
+    ],
+    answer: 0,
+    explain: "<strong>Dina d'malkhuta dina</strong> — a principle attributed to Shmuel — states that secular civil law of the host government is legally binding on Jews. It governs areas like taxes, contracts, and property records."
+  },
+  {
+    cat: "Key Concepts",
+    q: "What is a \"Stam\" (סְתָם) in Talmudic terminology?",
+    choices: [
+      "An anonymous, unattributed statement in the Talmud",
+      "A Biblical verse used as proof",
+      "A minority opinion",
+      "A final halachic ruling"
+    ],
+    answer: 0,
+    explain: "A <strong>Stam</strong> (literally 'plain' or 'closed') refers to anonymous, unattributed passages in the Talmud. These editorial layers, called <em>stammaim</em>, are believed to have shaped the final redaction of the Bavli."
+  },
+  {
+    cat: "Key Concepts",
+    q: "\"<span class='hebrew-phrase'>תֵּיקוּ</span>\" (Teiku) appears when the Talmud cannot resolve a dispute. One interpretation of the word is an acronym for what?",
+    choices: [
+      "Tishbi Yetaretz Kushyot U'ba'ayot — Elijah will resolve questions and problems",
+      "Torah Emet Yisrael Kodesh U'gadol",
+      "It has no known meaning",
+      "The name of an ancient Babylonian town"
+    ],
+    answer: 0,
+    explain: "<strong>Teiku</strong> is used when a question is left unresolved. One popular (though likely folk) etymology is <em>Tishbi Yetaretz Kushyot U'Ba'ayot</em> — the Tishbite (Elijah) will resolve all questions and problems when he heralds the Messianic era."
+  },
+  {
+    cat: "Key Concepts",
+    q: "What is the difference between a <em>Tanna</em> and an <em>Amora</em>?",
+    choices: [
+      "Tannaim lived in the Mishnaic period (until ~220 CE); Amoraim in the subsequent Talmudic period",
+      "Tannaim were Babylonian; Amoraim were Israeli",
+      "Tannaim wrote the Talmud; Amoraim wrote the Midrash",
+      "There is no meaningful distinction"
+    ],
+    answer: 0,
+    explain: "<strong>Tannaim</strong> (repeaters) are sages of the Mishnaic era (c. 10–220 CE); an Amora may not dispute a Tanna directly. <strong>Amoraim</strong> (speakers) are sages of the Talmudic era (220–500 CE) who interpreted the Mishnah."
+  },
+  {
+    cat: "Key Concepts",
+    q: "\"<span class='hebrew-phrase'>קַל וָחֹמֶר</span>\" (kal va-chomer) is the first and most basic of Rabbi Ishmael's thirteen hermeneutical rules. It is equivalent to which logical form?",
+    choices: ["A fortiori (argument from stronger reason)", "Analogy (argument from similarity)", "Reductio ad absurdum", "Majority rule"],
+    answer: 0,
+    explain: "<strong>Kal va-chomer</strong> means 'light and heavy' — if a rule applies in a less stringent case (<em>kal</em>), it certainly applies in a more stringent case (<em>chomer</em>). It is the Talmudic equivalent of the <em>a fortiori</em> argument."
+  },
+  {
+    cat: "Key Concepts",
+    q: "The concept of \"<span class='hebrew-phrase'>גְּזֵרָה שָׁוָה</span>\" (gezera shava) allows halachic derivation based on what?",
+    choices: [
+      "Two identical or similar words appearing in different Biblical verses",
+      "A numerical value shared between two commandments",
+      "A tradition passed from teacher to student",
+      "A ruling derived from logic alone"
+    ],
+    answer: 0,
+    explain: "<strong>Gezera shava</strong> (equal decree) is the second hermeneutical rule: when the same word or phrase appears in two different Torah passages, laws from one passage may be applied to the other. It requires a tradition that the link is valid."
+  },
+
+  // ── Famous Stories & Aggadah ──
+  {
+    cat: "Aggadah",
+    q: "The famous story of Kamtza and Bar Kamtza — whose mix-up led to baseless hatred and, according to the Talmud, the destruction of the Temple — appears in which tractate?",
+    choices: ["Gittin", "Sanhedrin", "Bava Metzia", "Yoma"],
+    answer: 0,
+    explain: "The story of <strong>Kamtza and Bar Kamtza</strong> appears in <em>Gittin 55b–56a</em>. A man invited Kamtza but his enemy Bar Kamtza arrived by mistake; instead of letting him stay, the host humiliated him before Torah scholars who said nothing — teaching that <em>sinat chinam</em> (baseless hatred) destroyed the Temple."
+  },
+  {
+    cat: "Aggadah",
+    q: "In the Oven of Akhnai story (Bava Metzia 59b), Rabbi Eliezer brings miraculous proofs for his ruling but is outvoted. What is God's response when asked?",
+    choices: [
+      "\"My children have defeated Me!\" (and He laughs)",
+      "God strikes Rabbi Eliezer with lightning",
+      "God sends an angel to overturn the ruling",
+      "God is silent"
+    ],
+    answer: 0,
+    explain: "In the <strong>Oven of Akhnai</strong> story, God laughs and declares <em>\"Nitzchuni banai!\"</em> — \"My children have defeated Me!\" — because the Torah was given at Sinai and is now decided by majority rule among scholars, not by Heavenly voices (<em>bat kol</em>)."
+  },
+  {
+    cat: "Aggadah",
+    q: "The story of the four who \"entered the Pardes\" (mystical orchard) ends with only one emerging in peace. Who was that sage?",
+    choices: ["Rabbi Akiva", "Ben Azzai", "Ben Zoma", "Elisha ben Avuyah"],
+    answer: 0,
+    explain: "<strong>Rabbi Akiva</strong> alone entered and exited in peace. Ben Azzai died, Ben Zoma went mad, and Elisha ben Avuyah (Acher) \"cut the shoots\" and became a heretic. The story appears in <em>Chagiga 14b</em>."
+  },
+  {
+    cat: "Aggadah",
+    q: "Hillel's famous response to the gentile who asked to learn the whole Torah while standing on one foot was:",
+    choices: [
+      "\"What is hateful to you, do not do to your fellow. That is the whole Torah — the rest is commentary; go and learn.\"",
+      "\"Love your neighbor as yourself.\"",
+      "\"Fear God and keep His commandments.\"",
+      "\"Hear O Israel, the Lord is our God, the Lord is One.\""
+    ],
+    answer: 0,
+    explain: "Hillel replied: <strong>\"What is hateful to you, do not do to your fellow. That is the entire Torah; the rest is commentary — go and learn.\"</strong> (Shabbat 31a). This distills the Torah's ethics into the negative formulation of the Golden Rule."
+  },
+
+  // ── Halacha in Practice ──
+  {
+    cat: "Halacha",
+    q: "The rule \"<span class='hebrew-phrase'>פִּקּוּחַ נֶפֶשׁ דּוֹחֶה שַׁבָּת</span>\" (pikuach nefesh docheh Shabbat) means that saving a life overrides which day's prohibitions?",
+    choices: ["Shabbat and Yom Tov", "Only Shabbat", "Yom Kippur only", "All holidays except Yom Kippur"],
+    answer: 0,
+    explain: "<strong>Pikuach nefesh</strong> (saving a life) overrides <em>Shabbat and Yom Tov</em>. Even Yom Kippur (the Day of Atonement) is overridden to save a life. The principle is derived from <em>\"V'chai bahem\"</em> — 'and you shall live by them' (Leviticus 18:5)."
+  },
+  {
+    cat: "Halacha",
+    q: "\"<span class='hebrew-phrase'>מַרְאֵה מְקוֹם</span>\" (mar'eh makom) is a Talmudic expression meaning:",
+    choices: [
+      "Pointing to a source — citing a location without fully explaining it",
+      "A legal fiction used to avoid a prohibition",
+      "A minority ruling preserved for future use",
+      "A physical landmark used to define a domain"
+    ],
+    answer: 0,
+    explain: "<strong>Mar'eh makom</strong> literally means 'showing a place.' In Talmudic methodology it refers to citing a source without full derivation — pointing you to the relevant passage to learn it yourself, rather than spelling out the reasoning."
+  },
+  {
+    cat: "Halacha",
+    q: "The concept of \"<span class='hebrew-phrase'>עֵד אֶחָד נֶאֱמָן בְּאִסּוּרִין</span>\" (a single witness is believed in prohibitions) applies in which context?",
+    choices: [
+      "One witness may testify that food is kosher or that a prohibition applies",
+      "One witness suffices for all monetary matters",
+      "One witness can establish a capital offense",
+      "One witness establishes a marriage"
+    ],
+    answer: 0,
+    explain: "In general, monetary matters require two witnesses. However, for <strong>ritual prohibitions</strong> (<em>issurin</em>), a single reliable witness (or even the person themselves) may be believed — for example, testifying that an item is not kosher."
+  },
+  {
+    cat: "Halacha",
+    q: "The Talmudic principle \"<span class='hebrew-phrase'>כֹּל הַמְקַיֵּם נֶפֶשׁ אַחַת...</span>\" (Whoever saves a single soul...) teaches that saving one life is as if one saved:",
+    choices: ["An entire world", "One's whole family", "The Jewish people", "All future generations"],
+    answer: 0,
+    explain: "From <em>Sanhedrin 37a</em>: <strong>\"Whoever saves a single soul, Scripture accounts it as if he had saved an entire world; and whoever destroys a single soul, as if he had destroyed an entire world.\"</strong> This is one of the most powerful ethical statements in the Talmud."
+  },
+
+  // ── Maseches Makkot ──
+  {
+    cat: "Maseches Makkot",
+    q: "Maseches Makkot opens with the law of <em>edim zomemim</em> (conspiring witnesses). What is their punishment?",
+    choices: [
+      "They receive the punishment they intended to impose on the defendant",
+      "They receive 39 lashes regardless of their scheme",
+      "They are exiled to a city of refuge",
+      "Their testimony is merely disqualified"
+    ],
+    answer: 0,
+    explain: "<strong>Edim zomemim</strong> (conspiring / plotting witnesses) are punished measure-for-measure: <em>\"as he schemed to do to his brother, so shall be done to him\"</em> (Devarim 19:19). The Sages derive from the verse's phrasing that this applies only when the intended victim has not yet been punished (Makkot 5b)."
+  },
+  {
+    cat: "Maseches Makkot",
+    q: "How many cities of refuge (<span class='hebrew-phrase'>עָרֵי מִקְלָט</span>) were designated in total — three in Eretz Yisrael and three in Ever HaYarden — and who designated them?",
+    choices: [
+      "6 total; Moses designated the three in Ever HaYarden and Joshua the three in Canaan",
+      "3 total; only on the western side of the Jordan",
+      "12 total; one per tribe",
+      "6 total; all designated by Joshua"
+    ],
+    answer: 0,
+    explain: "There were <strong>six</strong> cities of refuge (Makkot 9b–10a). Moses himself designated the three in <em>Ever HaYarden</em> (Transjordan) even though they could not yet be used in his lifetime. Joshua later designated three in Canaan. The Talmud praises Moses for eagerness in a mitzvah he could only partially fulfill."
+  },
+  {
+    cat: "Maseches Makkot",
+    q: "An accidental killer is protected in a city of refuge until the death of the Kohen Gadol. If the Kohen Gadol dies while the killer is still in exile, what is the law?",
+    choices: [
+      "The killer goes free and may return home — even if a new Kohen Gadol was appointed",
+      "The killer must wait for the new Kohen Gadol to die",
+      "The killer remains in the city of refuge permanently",
+      "The killer must bring an atonement offering and then goes free"
+    ],
+    answer: 0,
+    explain: "The death of the Kohen Gadol atones and the killer is free to return home (Makkot 11b). The Talmud records that mothers of Kohanim Gedolim would bring food and clothing to the cities of refuge, hoping the exiles would not pray for their sons' deaths. Even if a new Kohen Gadol is appointed, the exile ends at the death of the one who served when the killing occurred."
+  },
+  {
+    cat: "Maseches Makkot",
+    q: "The Torah states the maximum lashes is \"forty\" — how many does the Talmud rule are actually administered, and why?",
+    choices: [
+      "39 lashes — so that if miscounted, the 40th never exceeds the Torah maximum",
+      "40 lashes — exactly as the Torah states",
+      "32 lashes — one third less as a rabbinic fence",
+      "It depends on the person's physical strength"
+    ],
+    answer: 0,
+    explain: "The Talmud (Makkot 22a) derives from the verse <em>\"forty, he shall not add\"</em> (Devarim 25:3) that the maximum is <strong>39 lashes</strong> — a number divisible by three (given in sets of one front, two back). Maimonides records the count as based on a physician's assessment of the offender's constitution."
+  },
+  {
+    cat: "Maseches Makkot",
+    q: "The Mishnah (Makkot 3:15) states that Rabbi Chananya ben Akashya said God wished to merit Israel by giving them Torah and many mitzvot. The Mishnah then cites the verse: \"The Lord desired, for His righteousness' sake, to make the Torah great and glorious.\" How many mitzvot does the Talmud (Makkot 23b) count in the Torah?",
+    choices: ["613", "365", "248", "600"],
+    answer: 0,
+    explain: "<em>Makkot 23b</em> contains the famous teaching of Rabbi Simlai: <strong>613 commandments</strong> were given to Moses — 248 positive commandments (corresponding to limbs of the body) and 365 negative commandments (corresponding to days of the solar year). This passage has become the classical source for the number of Torah mitzvot."
+  },
+  {
+    cat: "Maseches Makkot",
+    q: "At the end of Maseches Makkot, Rabban Gamliel, Rabbi Elazar ben Azaryah, and Rabbi Yehoshua wept when they saw a fox emerge from the site of the Kodesh HaKodashim. Rabbi Akiva laughed. Why did Rabbi Akiva laugh?",
+    choices: [
+      "Because the fulfillment of Uriah's dire prophecy guaranteed Zechariah's joyful prophecy of restoration would also come true",
+      "Because he was relieved the Temple had been destroyed, ending idol worship",
+      "Because foxes are a sign of good fortune in Jewish tradition",
+      "Because he laughed at the weeping of his colleagues"
+    ],
+    answer: 0,
+    explain: "Rabbi Akiva explained: Uriah prophesied that <em>\"Zion shall be plowed as a field\"</em> (Michah 3:12); Zechariah prophesied that <em>\"old men and women shall sit in the streets of Jerusalem\"</em> (Zechariah 8:4). Since Uriah's harsh prophecy was fulfilled — evidenced by foxes in the ruins — Zechariah's joyful prophecy of restoration <strong>must also</strong> be fulfilled. The colleagues said: <em>\"Akiva, you have consoled us!\"</em> (Makkot 24b)."
+  },
+  {
+    cat: "Maseches Makkot",
+    q: "The Gemara (Makkot 10a) teaches: \"<span class='hebrew-phrase'>בַּדֶּרֶךְ שֶׁאָדָם רוֹצֶה לֵילֵךְ בָּהּ מוֹלִיכִין אוֹתוֹ</span>\" — \"In the path a person wishes to go, they lead him.\" This is derived from which halachic context in Makkot?",
+    choices: [
+      "An accidental killer is accompanied to the city of refuge; the wording teaches that divine providence follows human choice",
+      "Testimony must be freely given, not coerced",
+      "A scholar may choose which yeshiva to attend",
+      "Witnesses must walk to the court themselves"
+    ],
+    answer: 0,
+    explain: "The Gemara derives this principle in the context of the city of refuge: the Torah obligates the community to accompany and establish roads for the fleeing killer. From this, the Talmud extrapolates the broader spiritual principle — that heaven assists a person in whichever moral direction they have already chosen to travel."
+  },
+  {
+    cat: "Maseches Makkot",
+    q: "Which category of sinner is NOT liable to lashes (malkot) according to Makkot?",
+    choices: [
+      "One who violates a \"lav she'ein bo ma'aseh\" — a prohibition fulfilled through speech or inaction alone",
+      "One who eats forbidden foods",
+      "One who wears shatnez (mixed wool and linen)",
+      "One who works on Shabbat"
+    ],
+    answer: 0,
+    explain: "Lashes apply only for the violation of a <em>lav</em> (prohibition) involving a concrete action (<em>ma'aseh</em>). A <strong>lav she'ein bo ma'aseh</strong> — a prohibition fulfilled by inaction or speech alone (e.g., false oaths, certain verbal transgressions) — does not carry lashes. This rule is a foundational principle of the third chapter of Makkot."
+  },
+
+  // ── Bonus: Fun & Famous ──
+  {
+    cat: "Famous Passages",
+    q: "The phrase \"<span class='hebrew-phrase'>אֵלּוּ וָאֵלּוּ דִּבְרֵי אֱלֹהִים חַיִּים</span>\" (Elu v'elu divrei Elohim chayyim) means:",
+    choices: [
+      "\"Both these and these are words of the living God\" — both conflicting opinions have validity",
+      "\"The living God will decide the dispute\"",
+      "\"Both schools must be obeyed simultaneously\"",
+      "\"Neither opinion is authoritative until tested\""
+    ],
+    answer: 0,
+    explain: "<strong>\"Elu v'elu divrei Elohim chayyim\"</strong> appears in <em>Eruvin 13b</em> and <em>Gittin 6b</em>. A Heavenly voice declares that both Beit Shammai and Beit Hillel speak words of the living God — affirming the legitimacy of machloket (debate) in Torah study."
+  },
+  {
+    cat: "Famous Passages",
+    q: "The Talmud in Sanhedrin 98a–99a dedicates much discussion to the Messiah. Which sage responded to the question of when the Messiah would come with \"today — if you heed His voice\"?",
+    choices: ["Rabbi Yehoshua ben Levi", "Rabbi Akiva", "Rabbi Yochanan", "Elijah the Prophet"],
+    answer: 3,
+    explain: "In the famous story, Rabbi Yehoshua ben Levi meets <strong>Elijah the Prophet</strong> and asks when the Messiah will come. Elijah sends him to ask the Messiah directly, who answers: <em>\"Today — if you heed His voice\"</em> (Psalm 95:7). The answer both encourages and challenges."
+  }
+];
+
+// ── State ──
+let state = {
+  screen: 'intro',        // 'intro' | 'game' | 'results'
+  questions: [],
+  current: 0,
+  score: 0,
+  streak: 0,
+  maxStreak: 0,
+  answered: false,
+  selectedIndex: null,
+  categoryStats: {}      // cat -> { correct, total }
+};
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startGame() {
+  state.questions = shuffle(QUESTIONS);
+  state.current = 0;
+  state.score = 0;
+  state.streak = 0;
+  state.maxStreak = 0;
+  state.answered = false;
+  state.selectedIndex = null;
+  state.categoryStats = {};
+  state.screen = 'game';
+  render();
+}
+
+function selectAnswer(idx) {
+  if (state.answered) return;
+  state.answered = true;
+  state.selectedIndex = idx;
+
+  const q = state.questions[state.current];
+  const correct = idx === q.answer;
+
+  if (correct) {
+    state.score++;
+    state.streak++;
+    state.maxStreak = Math.max(state.maxStreak, state.streak);
+  } else {
+    state.streak = 0;
+  }
+
+  // category stats
+  const cat = q.cat;
+  if (!state.categoryStats[cat]) state.categoryStats[cat] = { correct: 0, total: 0 };
+  state.categoryStats[cat].total++;
+  if (correct) state.categoryStats[cat].correct++;
+
+  render();
+}
+
+function nextQuestion() {
+  state.current++;
+  state.answered = false;
+  state.selectedIndex = null;
+
+  if (state.current >= state.questions.length) {
+    state.screen = 'results';
+  }
+  render();
+}
+
+function getRank() {
+  const pct = state.score / state.questions.length;
+  if (pct === 1.0) return { label: 'Rosh Yeshiva', color: '#c8930a', bg: 'rgba(200,147,10,0.15)', border: '#c8930a' };
+  if (pct >= 0.8) return { label: 'Talmid Chacham', color: '#1a5c1a', bg: 'rgba(26,92,26,0.12)', border: '#1a5c1a' };
+  if (pct >= 0.6) return { label: 'Ben Torah', color: '#1a3a6b', bg: 'rgba(26,58,107,0.12)', border: '#1a3a6b' };
+  if (pct >= 0.4) return { label: 'Masmid', color: '#5a3a1a', bg: 'rgba(90,58,26,0.12)', border: '#5a3a1a' };
+  return { label: 'Talmid Mechudash', color: '#8b1a1a', bg: 'rgba(139,26,26,0.10)', border: '#8b1a1a' };
+}
+
+function render() {
+  const card = document.getElementById('game-card');
+  card.innerHTML = '';
+
+  if (state.screen === 'intro') card.innerHTML = renderIntro();
+  else if (state.screen === 'game') card.innerHTML = renderGame();
+  else card.innerHTML = renderResults();
+
+  card.classList.remove('fade');
+  void card.offsetWidth;
+  card.classList.add('fade');
+
+  // Attach listeners after render
+  if (state.screen === 'intro') {
+    document.querySelector('.start-btn').addEventListener('click', startGame);
+  } else if (state.screen === 'game') {
+    document.querySelectorAll('.choice-btn').forEach((btn, i) => {
+      btn.addEventListener('click', () => selectAnswer(i));
+    });
+    const nextBtn = document.querySelector('.next-btn');
+    if (nextBtn) nextBtn.addEventListener('click', nextQuestion);
+  } else {
+    document.querySelector('.restart-btn').addEventListener('click', () => {
+      state.screen = 'intro';
+      render();
+    });
+  }
+}
+
+function renderIntro() {
+  return `
+    <div id="intro">
+      <div class="divider">✦ ✦ ✦</div>
+      <p class="intro-text">
+        Challenge yourself with questions spanning the tractates, sages, halachic principles,
+        and famous aggadot of the Talmud Bavli and Yerushalmi.
+        Every question comes with a source-based explanation.
+      </p>
+      <div class="intro-stats">
+        <div class="stat-box">
+          <div class="num">${QUESTIONS.length}</div>
+          <div class="lbl">Questions</div>
+        </div>
+        <div class="stat-box">
+          <div class="num">6</div>
+          <div class="lbl">Categories</div>
+        </div>
+        <div class="stat-box">
+          <div class="num">∞</div>
+          <div class="lbl">Chavruta</div>
+        </div>
+      </div>
+      <button class="start-btn">BEGIN LEARNING</button>
+      <div class="divider" style="margin-top:1.2rem">✦ ✦ ✦</div>
+    </div>
+  `;
+}
+
+function renderGame() {
+  const q = state.questions[state.current];
+  const total = state.questions.length;
+  const pct = ((state.current) / total * 100).toFixed(1);
+  const labels = ['A', 'B', 'C', 'D'];
+
+  let choicesHTML = q.choices.map((c, i) => {
+    let cls = 'choice-btn';
+    let disabled = '';
+    if (state.answered) {
+      disabled = 'disabled';
+      if (i === q.answer) cls += ' correct';
+      else if (i === state.selectedIndex) cls += ' wrong';
+    }
+    return `
+      <button class="${cls}" ${disabled}>
+        <span class="label">${labels[i]}</span>
+        <span>${c}</span>
+      </button>
+    `;
+  }).join('');
+
+  const streakBadge = state.streak >= 2
+    ? `<span class="streak-badge">🔥 ${state.streak} streak</span>`
+    : '';
+
+  return `
+    <div class="score-bar">
+      <div class="score-pill">Score: ${state.score}${streakBadge}</div>
+      <div class="progress-wrap">
+        <div class="progress-bar" style="width:${pct}%"></div>
+      </div>
+      <div class="q-counter">${state.current + 1} / ${total}</div>
+    </div>
+    <div class="category">${q.cat}</div>
+    <div class="question-text">${q.q}</div>
+    <div class="choices">${choicesHTML}</div>
+    <div class="explanation ${state.answered ? 'show' : ''}">
+      📜 ${q.explain}
+    </div>
+    <button class="next-btn ${state.answered ? 'show' : ''}">
+      ${state.current + 1 < total ? 'NEXT QUESTION →' : 'SEE RESULTS'}
+    </button>
+  `;
+}
+
+function renderResults() {
+  const total = state.questions.length;
+  const rank = getRank();
+  const pct = Math.round(state.score / total * 100);
+
+  // Build category breakdown
+  const cats = Object.entries(state.categoryStats)
+    .map(([cat, s]) => `
+      <div class="breakdown-item">
+        ${cat}<br/>
+        <span>${s.correct}/${s.total}</span>
+      </div>
+    `).join('');
+
+  return `
+    <div id="results">
+      <div style="color:var(--ink-light);font-size:0.9rem;margin-bottom:0.3rem">Your score</div>
+      <div class="results-score">${state.score}<span style="font-size:1.5rem;opacity:0.5">/${total}</span></div>
+      <div class="results-label">${pct}% correct • Best streak: ${state.maxStreak}</div>
+      <div class="rank-badge" style="color:${rank.color};background:${rank.bg};border:1.5px solid ${rank.border}">
+        ${rank.label}
+      </div>
+      <div class="divider">✦ ✦ ✦</div>
+      <div class="results-breakdown">${cats}</div>
+      <button class="restart-btn">LEARN AGAIN</button>
+    </div>
+  `;
+}
+
+// Boot
+render();
+</script>
+</body>
+</html>
